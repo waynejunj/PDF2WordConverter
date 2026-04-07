@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF2Word Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            color: #1a1a2e;
+        }
+
+        .app-bar {
+            background: #1565C0;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .app-bar svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .app-bar h1 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .container {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #1565C0;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .upload-zone {
+            border: 2px dashed #90CAF9;
+            border-radius: 12px;
+            padding: 40px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #F8FBFF;
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: #1565C0;
+            background: #EEF4FF;
+        }
+
+        .upload-zone svg {
+            width: 48px;
+            height: 48px;
+            color: #90CAF9;
+            margin-bottom: 12px;
+        }
+
+        .upload-zone p {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+        }
+
+        .upload-zone .hint {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .selected-file {
+            display: none;
+            background: #EEF4FF;
+            border: 1px solid #90CAF9;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 16px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .selected-file.visible {
+            display: flex;
+        }
+
+        .selected-file svg {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+        }
+
+        .selected-file .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .selected-file .file-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .selected-file .file-type {
+            font-size: 0.78rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 24px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-top: 14px;
+        }
+
+        .btn-primary {
+            background: #1565C0;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #0D47A1;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(21,101,192,0.3);
+        }
+
+        .btn-primary:disabled {
+            background: #B0BEC5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: #F0F4F8;
+            color: #1565C0;
+            border: 1px solid #90CAF9;
+        }
+
+        .btn-secondary:hover {
+            background: #E3ECFF;
+        }
+
+        .progress-section {
+            display: none;
+            margin-top: 16px;
+        }
+
+        .progress-section.visible {
+            display: block;
+        }
+
+        .progress-bar-container {
+            background: #E3F2FD;
+            border-radius: 8px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #1565C0, #42A5F5);
+            border-radius: 8px;
+            animation: progress-anim 1.5s ease-in-out infinite;
+        }
+
+        @keyframes progress-anim {
+            0% { width: 10%; }
+            50% { width: 80%; }
+            100% { width: 95%; }
+        }
+
+        .status-text {
+            font-size: 0.87rem;
+            color: #1565C0;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .result-section {
+            display: none;
+        }
+
+        .result-section.visible {
+            display: block;
+        }
+
+        .result-success {
+            background: #E8F5E9;
+            border: 1px solid #A5D6A7;
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .result-success svg {
+            width: 28px;
+            height: 28px;
+            color: #2E7D32;
+            flex-shrink: 0;
+        }
+
+        .result-success .result-info h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #2E7D32;
+        }
+
+        .result-success .result-info p {
+            font-size: 0.82rem;
+            color: #388E3C;
+            margin-top: 2px;
+        }
+
+        .error-banner {
+            display: none;
+            background: #FFEBEE;
+            border: 1px solid #EF9A9A;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 14px;
+            color: #C62828;
+            font-size: 0.88rem;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .error-banner.visible {
+            display: flex;
+        }
+
+        .error-banner svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .history-item {
+            background: #F8FBFF;
+            border: 1px solid #E3EDF9;
+            border-radius: 10px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .history-item svg.file-icon {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+
+        .history-item .h-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .history-item .h-name {
+            font-size: 0.87rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .history-item .h-meta {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 3px;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        .badge-error {
+            background: #FFEBEE;
+            color: #C62828;
+        }
+
+        .h-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            color: #666;
+            transition: all 0.15s;
+        }
+
+        .icon-btn:hover {
+            background: #E3EDF9;
+            color: #1565C0;
+        }
+
+        .icon-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px 16px;
+            color: #aaa;
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 10px;
+            color: #ddd;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+        }
+
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .history-header h2 {
+            margin-bottom: 0;
+        }
+
+        .clear-btn {
+            font-size: 0.8rem;
+            color: #E53935;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 6px;
+            transition: background 0.15s;
+        }
+
+        .clear-btn:hover {
+            background: #FFEBEE;
+        }
+
+        .tab-row {
+            display: flex;
+            gap: 2px;
+            background: #E3EDF9;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #1565C0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-bar">
+        <svg viewBox="0 0 24 24" fill="white">
+            <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/>
+        </svg>
+        <h1>PDF2Word Converter</h1>
+    </div>
+
+    <div class="container">
+        <div class="tab-row">
+            <button class="tab active" onclick="switchTab('convert')">Convert</button>
+            <button class="tab" onclick="switchTab('history')">History</button>
+        </div>
+
+        <div id="convert-panel" class="tab-panel active">
+            <div class="card">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+                    </svg>
+                    Convert Document
+                </h2>
+
+                <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                    </svg>
+                    <p>Click to select a file or drag and drop</p>
+                    <p class="hint">Supports PDF, DOC, DOCX (max 50MB)</p>
+                </div>
+                <input type="file" id="fileInput" accept=".pdf,.doc,.docx">
+
+                <div class="selected-file" id="selectedFile">
+                    <svg id="fileIcon" viewBox="0 0 24 24" fill="#1565C0">
+                        <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/>
+                    </svg>
+                    <div class="file-info">
+                        <div class="file-name" id="fileName">No file selected</div>
+                        <div class="file-type" id="conversionLabel">-</div>
+                    </div>
+                </div>
+
+                <div class="error-banner" id="errorBanner">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    <span id="errorText">An error occurred.</span>
+                </div>
+
+                <div class="progress-section" id="progressSection">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar"></div>
+                    </div>
+                    <div class="status-text" id="statusText">Converting...</div>
+                </div>
+
+                <div class="result-section" id="resultSection">
+                    <div class="result-success">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        <div class="result-info">
+                            <h3>Conversion Successful!</h3>
+                            <p id="resultFileName">-</p>
+                        </div>
+                    </div>
+                    <a id="downloadLink" href="#" class="btn btn-primary" style="text-decoration: none;">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                        Download Converted File
+                    </a>
+                    <button class="btn btn-secondary" onclick="resetForm()">Convert Another File</button>
+                </div>
+
+                <button class="btn btn-primary" id="convertBtn" disabled onclick="startConversion()">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+                    </svg>
+                    Convert File
+                </button>
+            </div>
+        </div>
+
+        <div id="history-panel" class="tab-panel">
+            <div class="card">
+                <div class="history-header">
+                    <h2>
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                            <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                        </svg>
+                        Conversion History
+                    </h2>
+                    <button class="clear-btn" onclick="clearHistory()">Clear All</button>
+                </div>
+                <div class="history-list" id="historyList">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                        </svg>
+                        <p>No conversions yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let currentDownloadId = null;
+
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFileSelect(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) handleFileSelect(e.target.files[0]);
+        });
+
+        function handleFileSelect(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!['pdf', 'doc', 'docx'].includes(ext)) {
+                showError('Only PDF, DOC, and DOCX files are supported.');
+                return;
+            }
+            selectedFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            const convType = ext === 'pdf' ? 'Will convert: PDF → Word (.docx)' : 'Will convert: Word → PDF (.pdf)';
+            document.getElementById('conversionLabel').textContent = convType;
+            document.getElementById('selectedFile').classList.add('visible');
+            document.getElementById('convertBtn').disabled = false;
+            hideError();
+            hideResult();
+        }
+
+        async function startConversion() {
+            if (!selectedFile) return;
+
+            const convertBtn = document.getElementById('convertBtn');
+            convertBtn.disabled = true;
+            showProgress('Preparing conversion...');
+            hideError();
+            hideResult();
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            setTimeout(() => {
+                document.getElementById('statusText').textContent = 'Converting document...';
+            }, 500);
+
+            try {
+                const response = await fetch('/api/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                hideProgress();
+
+                if (data.success) {
+                    currentDownloadId = data.downloadId;
+                    document.getElementById('resultFileName').textContent = data.outputFileName;
+                    document.getElementById('downloadLink').href = `/api/download/${data.downloadId}`;
+                    showResult();
+                    loadHistory();
+                } else {
+                    showError(data.error || 'Conversion failed. Please try again.');
+                    convertBtn.disabled = false;
+                }
+            } catch (err) {
+                hideProgress();
+                showError('Network error. Please check your connection and try again.');
+                convertBtn.disabled = false;
+            }
+        }
+
+        function showProgress(msg) {
+            document.getElementById('statusText').textContent = msg;
+            document.getElementById('progressSection').classList.add('visible');
+        }
+
+        function hideProgress() {
+            document.getElementById('progressSection').classList.remove('visible');
+        }
+
+        function showResult() {
+            document.getElementById('resultSection').classList.add('visible');
+            document.getElementById('convertBtn').style.display = 'none';
+        }
+
+        function hideResult() {
+            document.getElementById('resultSection').classList.remove('visible');
+            document.getElementById('convertBtn').style.display = '';
+        }
+
+        function showError(msg) {
+            document.getElementById('errorText').textContent = msg;
+            document.getElementById('errorBanner').classList.add('visible');
+        }
+
+        function hideError() {
+            document.getElementById('errorBanner').classList.remove('visible');
+        }
+
+        function resetForm() {
+            selectedFile = null;
+            fileInput.value = '';
+            document.getElementById('selectedFile').classList.remove('visible');
+            document.getElementById('convertBtn').disabled = true;
+            document.getElementById('convertBtn').style.display = '';
+            hideResult();
+            hideError();
+            hideProgress();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach((t, i) => {
+                t.classList.toggle('active', ['convert', 'history'][i] === tab);
+            });
+            document.getElementById('convert-panel').classList.toggle('active', tab === 'convert');
+            document.getElementById('history-panel').classList.toggle('active', tab === 'history');
+            if (tab === 'history') loadHistory();
+        }
+
+        async function loadHistory() {
+            try {
+                const res = await fetch('/api/history');
+                const history = await res.json();
+                renderHistory(history);
+            } catch (e) {
+                console.error('Failed to load history', e);
+            }
+        }
+
+        function renderHistory(history) {
+            const list = document.getElementById('historyList');
+            if (!history.length) {
+                list.innerHTML = `<div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                    <p>No conversions yet</p>
+                </div>`;
+                return;
+            }
+            list.innerHTML = history.map(item => `
+                <div class="history-item">
+                    <svg class="file-icon" viewBox="0 0 24 24" fill="${item.status === 'completed' ? '#1565C0' : '#E53935'}">
+                        <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/>
+                    </svg>
+                    <div class="h-info">
+                        <div class="h-name">${escapeHtml(item.fileName)}</div>
+                        <div class="h-meta">${item.conversionType} &bull; ${formatDate(item.timestamp)} &nbsp;<span class="badge badge-${item.status === 'completed' ? 'success' : 'error'}">${item.status}</span></div>
+                    </div>
+                    <div class="h-actions">
+                        ${item.status === 'completed' && item.outputFileName ? `<a href="/api/download/${item.downloadId || ''}" class="icon-btn" title="Download" style="text-decoration:none">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        </a>` : ''}
+                        <button class="icon-btn" title="Delete" onclick="deleteHistory(${item.id})">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteHistory(id) {
+            await fetch(`/api/history/${id}`, { method: 'DELETE' });
+            loadHistory();
+        }
+
+        async function clearHistory() {
+            if (!confirm('Clear all conversion history?')) return;
+            await fetch('/api/history', { method: 'DELETE' });
+            loadHistory();
+        }
+
+        function formatDate(iso) {
+            const d = new Date(iso);
+            return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+    </script>
+</body>
+</html>
