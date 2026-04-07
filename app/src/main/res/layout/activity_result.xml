@@ -51,11 +51,29 @@
                 android:textAllCaps="false" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/downloadButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Download File"
+                android:textAllCaps="false"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/shareButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="Share Document"
+                android:textAllCaps="false"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/convertReverseButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Convert Back"
                 android:textAllCaps="false"
                 style="@style/Widget.Material3.Button.OutlinedButton" />
 

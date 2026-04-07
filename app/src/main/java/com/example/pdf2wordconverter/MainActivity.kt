@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
 
     private var selectedFileUri: Uri? = null
 
-    private val pickPdfLauncher = registerForActivityResult(
+    private val pickFileLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         selectFileButton.setOnClickListener {
-            pickPdfLauncher.launch("application/pdf")
+            pickFileLauncher.launch("*/*")
         }
 
         convertButton.setOnClickListener {
@@ -78,39 +78,99 @@ class MainActivity : AppCompatActivity() {
     private fun startConversion(uri: Uri) {
         progressBar.visibility = View.VISIBLE
         statusText.visibility = View.VISIBLE
-        statusText.text = "Converting PDF to Word..."
         convertButton.isEnabled = false
         selectFileButton.isEnabled = false
 
-        ConversionManager.convertPdfToWord(
-            this,
-            uri,
-            onSuccess = { outputUri ->
-                runOnUiThread {
-                    progressBar.visibility = View.GONE
-                    statusText.text = "Conversion successful!"
-                    Toast.makeText(this, "PDF converted successfully!", Toast.LENGTH_LONG).show()
+        val fileName = getFileName(uri)
+        val conversionType = when {
+            fileName.endsWith(".pdf") -> {
+                statusText.text = "Converting PDF to Word..."
+                "pdf_to_word"
+            }
+            fileName.endsWith(".docx") || fileName.endsWith(".doc") -> {
+                statusText.text = "Converting Word to PDF..."
+                "word_to_pdf"
+            }
+            else -> {
+                statusText.text = "Unsupported file type"
+                "unknown"
+            }
+        }
 
-                    convertButton.isEnabled = true
-                    selectFileButton.isEnabled = true
-
-                    val intent = Intent(this, ResultActivity::class.java).apply {
-                        putExtra("OUTPUT_URI", outputUri.toString())
-                        putExtra("FILE_NAME", getFileName(uri))
+        when (conversionType) {
+            "pdf_to_word" -> {
+                ConversionManager.convertPdfToWord(
+                    this,
+                    uri,
+                    onSuccess = { outputUri ->
+                        handleConversionSuccess(outputUri, fileName, uri)
+                    },
+                    onError = { error ->
+                        handleConversionError(error)
                     }
-                    startActivity(intent)
-                }
-            },
-            onError = { error ->
+                )
+            }
+            "word_to_pdf" -> {
+                ConversionManager.convertWordToPdf(
+                    this,
+                    uri,
+                    onSuccess = { outputUri ->
+                        handleConversionSuccess(outputUri, fileName, uri)
+                    },
+                    onError = { error ->
+                        handleConversionError(error)
+                    }
+                )
+            }
+            else -> {
                 runOnUiThread {
                     progressBar.visibility = View.GONE
-                    statusText.text = "Conversion failed"
-                    Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
+                    statusText.text = "Unsupported file type"
+                    Toast.makeText(this, "Supported formats: PDF, DOCX, DOC", Toast.LENGTH_LONG).show()
                     convertButton.isEnabled = true
                     selectFileButton.isEnabled = true
                 }
             }
-        )
+        }
+    }
+
+    private fun handleConversionSuccess(outputUri: Uri, fileName: String, inputUri: Uri) {
+        runOnUiThread {
+            progressBar.visibility = View.GONE
+            statusText.text = "Conversion successful!"
+            val extension = if (fileName.endsWith(".pdf")) "docx" else "pdf"
+            Toast.makeText(this, "File converted to $extension!", Toast.LENGTH_LONG).show()
+
+            convertButton.isEnabled = true
+            selectFileButton.isEnabled = true
+
+            val intent = Intent(this, ResultActivity::class.java).apply {
+                putExtra("OUTPUT_URI", outputUri.toString())
+                putExtra("FILE_NAME", fileName)
+                putExtra("OUTPUT_PATH", getCacheFilePath(fileName))
+            }
+            startActivity(intent)
+        }
+    }
+
+    private fun handleConversionError(error: String) {
+        runOnUiThread {
+            progressBar.visibility = View.GONE
+            statusText.text = "Conversion failed"
+            Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
+            convertButton.isEnabled = true
+            selectFileButton.isEnabled = true
+        }
+    }
+
+    private fun getCacheFilePath(fileName: String): String {
+        val outputFileName = when {
+            fileName.endsWith(".pdf") -> fileName.replace(".pdf", ".docx")
+            fileName.endsWith(".docx") -> fileName.replace(".docx", ".pdf")
+            fileName.endsWith(".doc") -> fileName.replace(".doc", ".pdf")
+            else -> fileName
+        }
+        return "${filesDir}/$outputFileName"
     }
 
     private fun getFileName(uri: Uri): String {
