@@ -59,8 +59,15 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
-    // PDF text extraction
-    implementation("com.tom_roush:pdfbox-android:2.0.27.0")
+    // Apache POI for Word documents
+    implementation("org.apache.poi:poi:5.2.3")
+    implementation("org.apache.poi:poi-ooxml:5.2.3")
+
+    // PDF processing with iText
+    implementation("com.itextpdf:itext-core:8.0.0")
+
+    // XML processing
+    implementation("org.apache.xmlbeans:xmlbeans:5.1.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
